@@ -1,0 +1,78 @@
+---
+title: "AutoML"
+author: "Suchait Mattoo"
+date: "February 12, 2019"
+output: html_document
+---
+
+##AutoML using H2o in R:
+
+```{r}
+## loading packages required
+library(data.table)
+library(h2o)
+library(GGally)
+
+# https://www.kaggle.com/uciml/pima-indians-diabetes-database link to data
+diab <- read.csv("diabetes.csv", header = T, stringsAsFactors = F) # reading csv
+
+summary(diab) # summary of data
+```
+
+```{r}
+str(diab) # structure of data
+```
+
+```{r}
+setDT(diab) # setting to data.table
+setnames(diab, "Outcome", "diabetes") # changing column name
+head(diab) # peek at data
+```
+
+```{r}
+ggcorr(diab) # coreelation among al the features
+```
+
+```{r}
+diab <- diab[, diabetes := as.factor(diabetes)] # target variable to factor
+
+## train test split
+nrows <- nrow(diab)
+index <- sample(1:nrows, 0.8 * nrows)  
+train <- diab[index,]                 
+test <- diab[-index,]                  
+
+
+y <- "diabetes" # target column name
+x <- setdiff(names(train), c("diabetes")) # predictors
+
+
+h2o.init() # initializing h2o
+
+train <- as.h2o(train) # converting to h2o object
+test <- as.h2o(test)
+
+## training automl model i n h2o
+aml <- h2o.automl(y = y, x = x,
+                  training_frame = train,
+                  max_runtime_secs = 999999999,
+                  max_models = 10,
+                  seed = 1
+)
+
+rm(list=setdiff(ls(), c("train", "test", "aml"))) # cleaning global environment
+
+lb <- aml@leaderboard
+print(lb, n = nrow(lb)) # print lb
+```
+
+```{r}
+aml@leader # leader
+```
+
+```{r}
+pred <- h2o.predict(aml, test) # predicting on test
+h2o.performance(model = aml@leader, newdata = test) # performance of a model
+h2o.shutdown(prompt = F)
+```
+
