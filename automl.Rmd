@@ -1,6 +1,6 @@
 ---
 title: "AutoML"
-author: "Suchait Mattoo"
+author: "sm925"
 date: "February 12, 2019"
 output: html_document
 ---
